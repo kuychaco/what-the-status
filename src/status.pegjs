@@ -1,17 +1,56 @@
 {
   function processChangedEntry(entry) {
     return {
-      filePath: entry.path,
+      filePath: entry.filePath,
+      stagedStatus: entry.xy.staged === '.' ? null : entry.xy.staged,
+      unstagedStatus: entry.xy.unstaged === '.' ? null : entry.xy.unstaged,
+      submodule: entry.submodule,
+      fileModes: {
+        head: entry.headMode,
+        index: entry.indexMode,
+        worktree: entry.worktreeMode,
+      },
+      headSha: entry.headSha,
+      indexSha: entry.indexSha,
+    }
+  }
+
+  function processUnmergedEntry(entry) {
+    return {
+      filePath: entry.filePath,
       stagedStatus: entry.xy.staged,
       unstagedStatus: entry.xy.unstaged,
-      submodule: entry.sub,
+      submodule: entry.submodule,
       fileModes: {
-        head: entry.head_mode,
-        index: entry.index_mode,
-        worktree: entry.worktree_mode,
+        stage1: entry.stage1Mode,
+        stage2: entry.stage2Mode,
+        stage3: entry.stage3Mode,
+        worktree: entry.worktreeMode,
       },
-      headSha: entry.head_sha,
-      indexSha: entry.index_sha,
+      stage1Sha: entry.stage1Sha,
+      stage2Sha: entry.stage2Sha,
+      stage3Sha: entry.stage3Sha,
+    }
+  }
+
+  function processRenamedOrCopiedEntry(entry) {
+    return {
+      filePath: entry.filePath,
+      origFilePath: entry.origFilePath,
+      stagedStatus: entry.xy.staged === '.' ? null : entry.xy.staged,
+      unstagedStatus: entry.xy.unstaged === '.' ? null : entry.xy.unstaged,
+      submodule: entry.submodule,
+      fileModes: {
+        head: entry.headMode,
+        index: entry.indexMode,
+        worktree: entry.worktreeMode,
+      },
+      headSha: entry.headSha,
+      indexSha: entry.indexSha,
+      similarity: {
+        type: entry.renameOrCopyScore[0],
+        score: entry.renameOrCopyScore[1]
+      }
     }
   }
 
@@ -19,41 +58,42 @@
     const branch = {}
     const changedEntries = []
     const untrackedEntries = []
+    const renamedEntries = []
+    const unmergedEntries = []
+    const ignoredEntries = []
 
     parts.forEach(part => {
       switch (part.type) {
-      case 'branch_header':
-        Object.assign(branch, part.data)
-        break;
-      case 'changed':
-        processChangedEntry(part.data) // TOOD
-        break;
+        case 'branch_header':
+          Object.assign(branch, part.data)
+          break;
+        case 'changed':
+          changedEntries.push(processChangedEntry(part.data)) // TOOD
+          break;
+        case 'untracked':
+          untrackedEntries.push(part.data)
+          break;
+        case 'unmerged':
+          unmergedEntries.push(processUnmergedEntry(part.data))
+          break;
+        case 'rename_or_copy':
+          renamedEntries.push(processRenamedOrCopiedEntry(part.data))
+          break;
+        case 'ignored':
+          ignoredEntries.push(part.data)
+          break;
+        default:
+          throw new Error(`Invalid status entry type: ${part.type}`)
       }
-
-
-
-      // { xy: { staged: 'M', unstaged: 'M' },
-      //  sub: { isSubmodule: false },
-      //  head_mode: '100644',
-      //  index_mode: '100644',
-      //  worktree_mode: '100644',
-      //  head_sha: '257cc5642cb1a054f08cc83f2d943e56fd3ebe99',
-      //  index_sha: 'c9f54222977c93ea17ba4a5a53c611fa7f1aaf56',
-      //  path: 'a.txt' },
-      // const type = parts.type;
-      // if (type === 'header') {
-      //
-      // } else if (type === 'changed') {
-      //
-      // } else if (type === 'untracked') {
-      //
-      // }
     })
 
     return {
       branch: branch,
       changedEntries: changedEntries,
-      untrackedEntries: untrackedEntries
+      untrackedEntries: untrackedEntries,
+      renamedEntries: renamedEntries,
+      unmergedEntries: unmergedEntries,
+      ignoredEntries: ignoredEntries,
     }
   }
 }
@@ -71,7 +111,7 @@ part
   / entry:ignored_entry           { return { type: 'ignored', data: entry } }
 
 branch_header
-  = '# branch.ab +' ahead:NUMBER ' -' behind:NUMBER { return { ahead_behind: { ahead: ahead, behind: behind } } }
+  = '# branch.ab +' ahead:NUMBER ' -' behind:NUMBER { return { aheadBehind: { ahead: ahead, behind: behind } } }
   / '# branch.' key:TEXT_NO_SPACES ' ' value:TEXT {
     var o = {}
     o[key] = value
@@ -82,29 +122,29 @@ generic_header
   = '# ' content:TEXT { return { text: text } }
 
 changed_entry
-  = '1 ' xy:xy ' ' sub:submodule ' ' head_mode:mode ' ' index_mode:mode ' ' worktree_mode:mode ' '
-         head_sha:sha ' ' index_sha:sha ' ' path:TEXT {
-    return { xy, sub, head_mode, index_mode, worktree_mode, head_sha, index_sha, path }
+  = '1 ' xy:xy ' ' submodule:submodule ' ' headMode:mode ' ' indexMode:mode ' ' worktreeMode:mode ' '
+         headSha:sha ' ' indexSha:sha ' ' filePath:TEXT {
+    return { xy, submodule, headMode, indexMode, worktreeMode, headSha, indexSha, filePath }
   }
 
 renamed_or_copied_entry
-  = '2 ' xy:xy ' ' sub:submodule ' ' head_mode:mode ' ' index_mode:mode ' ' worktree_mode:mode ' '
-         head_sha:sha ' ' index_sha:sha ' ' rename_or_copy_score:($ [RC] NUMBER) ' '
-         path:TEXT NULL origPath:TEXT {
-    return { xy, sub, head_mode, index_mode, worktree_mode, head_sha, index_sha, rename_or_copy_score, path, origPath }
+  = '2 ' xy:xy ' ' submodule:submodule ' ' headMode:mode ' ' indexMode:mode ' ' worktreeMode:mode ' '
+         headSha:sha ' ' indexSha:sha ' ' renameOrCopyScore:($ [RC] NUMBER) ' '
+         filePath:TEXT NULL origFilePath:TEXT {
+    return { xy, submodule, headMode, indexMode, worktreeMode, headSha, indexSha, renameOrCopyScore, filePath, origFilePath }
   }
 
 unmerged_entry
-  = 'u ' xy:xy ' ' sub:submodule ' ' stage1_mode:mode ' ' stage2_mode:mode ' ' stage3_mode:mode ' '
-         worktree_mode:mode ' ' stage1_sha:sha ' ' stage2_sha:sha ' ' stage3_sha:sha ' ' path:TEXT {
-    return { xy, sub, stage1_mode, stage2_mode, stage3_mode, worktree_mode, stage1_sha, stage2_sha, stage3_sha, path }
+  = 'u ' xy:xy ' ' submodule:submodule ' ' stage1Mode:mode ' ' stage2Mode:mode ' ' stage3Mode:mode ' '
+         worktreeMode:mode ' ' stage1Sha:sha ' ' stage2Sha:sha ' ' stage3Sha:sha ' ' filePath:TEXT {
+    return { xy, submodule, stage1Mode, stage2Mode, stage3Mode, worktreeMode, stage1Sha, stage2Sha, stage3Sha, filePath }
   }
 
 untracked_entry
-  = '? ' path:TEXT { return { path } }
+  = '? ' filePath:TEXT { return { filePath } }
 
 ignored_entry
-  = '! ' path:TEXT { return { path } }
+  = '! ' filePath:TEXT { return { filePath } }
 
 xy
   = [.MADRCU]+ { return { staged: text()[0], unstaged: text()[1] } }
