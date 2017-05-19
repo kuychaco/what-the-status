@@ -1,0 +1,23 @@
+{
+  "name": "what-the-status",
+  "version": "0.3.0",
+  "description": "procelain v2 status parsing library",
+  "main": "index.js",
+  "scripts": {
+    "build": "pegjs --cache -o lib/parser.js src/status.pegjs",
+    "test": "nodeunit test/*.test.js",
+    "prepublish": "npm run build"
+  },
+  "repository": "git://github.com/kuychaco/what-the-status.git",
+  "keywords": [
+    "status",
+    "parser"
+  ],
+  "author": "Katrina Uychaco <kuychaco@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "dedent-js": "^1.0.1",
+    "nodeunit": "^0.10.2",
+    "pegjs": "^0.10.0"
+  }
+}
