@@ -87,6 +87,10 @@
       }
     })
 
+    if (!branch.aheadBehind) {
+      branch.aheadBehind = { ahead: null, behind: null }
+    }
+
     return {
       branch: branch,
       changedEntries: changedEntries,
