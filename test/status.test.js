@@ -14,7 +14,13 @@ function nlToNul (str) {
   return out
 }
 
-exports.testSimpleStatus = function(test) {
+function asyncTest(fn) {
+  return function(test) {
+    Promise.resolve(fn(test)).then(() => test.done(), (err) => test.done(err))
+  }
+}
+
+exports.testSimpleStatus = asyncTest(async function(test) {
   var str = nlToNul(dedent`
     # branch.oid 66d11860af6d28eb38349ef83de475597cb0e8b4
     # branch.head master
@@ -27,7 +33,7 @@ exports.testSimpleStatus = function(test) {
     ? d.txt
   `)
 
-  const output = status.parse(str)
+  const output = await status.parse(str)
   assert.deepEqual(output, {
     branch: {
       oid: '66d11860af6d28eb38349ef83de475597cb0e8b4',
@@ -105,10 +111,9 @@ exports.testSimpleStatus = function(test) {
     unmergedEntries: [],
     ignoredEntries: [],
   })
-  test.done()
-}
+})
 
-exports.testUnmergedStatus = function(test) {
+exports.testUnmergedStatus = asyncTest(async function(test) {
   var str = nlToNul(dedent`
     # branch.oid 221202fafbed8259265ebca0fe0adc60c1cf650f
     # branch.head master
@@ -121,7 +126,7 @@ exports.testUnmergedStatus = function(test) {
     u DU N... 100644 000000 100644 100644 8e27be7d6154a1f68ea9160ef0e18691d20560dc 0000000000000000000000000000000000000000 5716ca5987cbf97d6bb54920bea6adde242d87e6 removed-on-master.txt
   `)
 
-  const output = status.parse(str)
+  const output = await status.parse(str)
   assert.deepEqual(output, {
     branch: {
       oid: '221202fafbed8259265ebca0fe0adc60c1cf650f',
@@ -211,10 +216,9 @@ exports.testUnmergedStatus = function(test) {
     ],
     ignoredEntries: []
   })
-  test.done()
-}
+})
 
-exports.testSubmoduleStatus = function(test) {
+exports.testSubmoduleStatus = asyncTest(async function(test) {
   var str = nlToNul(dedent`
     # branch.oid 732682dccb2aacef477696f495afd0d03aa1e4d2
     # branch.head master
@@ -224,7 +228,7 @@ exports.testSubmoduleStatus = function(test) {
     1 .M S.M. 160000 160000 160000 cb60ac4f2a3c5bc345d9770dc05d621ff0cf6ec7 cb60ac4f2a3c5bc345d9770dc05d621ff0cf6ec7 what-the-diff
   `)
 
-  const output = status.parse(str)
+  const output = await status.parse(str)
   assert.deepEqual(output, {
     branch: {
       oid: '732682dccb2aacef477696f495afd0d03aa1e4d2',
@@ -240,7 +244,7 @@ exports.testSubmoduleStatus = function(test) {
         submodule: {
           isSubmodule: true,
           commitChanged: true,
-          trackedChnages: false,
+          trackedChanges: false,
           untrackedChanges: false
         },
         fileModes: { head: '160000', index: '160000', worktree: '160000' },
@@ -254,7 +258,7 @@ exports.testSubmoduleStatus = function(test) {
         submodule: {
           isSubmodule: true,
           commitChanged: false,
-          trackedChnages: true,
+          trackedChanges: true,
           untrackedChanges: false
         },
         fileModes: { head: '160000', index: '160000', worktree: '160000' },
@@ -267,10 +271,9 @@ exports.testSubmoduleStatus = function(test) {
     unmergedEntries: [],
     ignoredEntries: []
   });
-  test.done()
-}
+})
 
-exports.testRenameOrCopyStatus = function(test) {
+exports.testRenameOrCopyStatus = asyncTest(async function(test) {
   var str = nlToNul(dedent`
     # branch.oid 9b48b861ea745c83e4b3895298f6b5a0c869e43a
     # branch.head master
@@ -280,7 +283,7 @@ exports.testRenameOrCopyStatus = function(test) {
     2 R. N... 100644 100644 100644 9591561840608d8af4384d52d4b915d0a52f357b 9591561840608d8af4384d52d4b915d0a52f357b R100 b.txt\0renamed-file.txt
   `)
 
-  const output = status.parse(str)
+  const output = await status.parse(str)
   assert.deepEqual(output, {
     branch: {
       oid: '9b48b861ea745c83e4b3895298f6b5a0c869e43a',
@@ -317,5 +320,4 @@ exports.testRenameOrCopyStatus = function(test) {
     unmergedEntries: [],
     ignoredEntries: []
   })
-  test.done()
-}
+})

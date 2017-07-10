@@ -4,9 +4,7 @@
   "description": "procelain v2 status parsing library",
   "main": "index.js",
   "scripts": {
-    "build": "pegjs --cache -o lib/parser.js src/status.pegjs",
-    "test": "nodeunit test/*.test.js",
-    "prepublish": "npm run build"
+    "test": "nodeunit test/*.test.js"
   },
   "repository": "git://github.com/kuychaco/what-the-status.git",
   "keywords": [
@@ -17,7 +15,9 @@
   "license": "MIT",
   "devDependencies": {
     "dedent-js": "^1.0.1",
-    "nodeunit": "^0.10.2",
-    "pegjs": "^0.10.0"
+    "nodeunit": "^0.10.2"
+  },
+  "dependencies": {
+    "split": "^1.0.0"
   }
 }
