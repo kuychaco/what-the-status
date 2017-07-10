@@ -1,6 +1,6 @@
 # JavaScript Status Parser
 
-Parse output of `git status --porcelain=v2 --branch` with JavaScript
+Parse output of `git status --porcelain=v2 --branch -z` with JavaScript
 
 ## Installation
 
@@ -12,9 +12,11 @@ what-the-status is available via npm
 ## Usage
 
 ```javascript
-let parse = require('what-the-status')
+const status = require('what-the-status')
 
-var str = `# branch.oid 66d11860af6d28eb38349ef83de475597cb0e8b4
+// NOTE: Instead of newlines, the input should contain null-character separators,
+// per the `-z` flag to `git status --porcelain=v2`.
+const str = `# branch.oid 66d11860af6d28eb38349ef83de475597cb0e8b4
 # branch.head master
 # branch.upstream origin/master
 # branch.ab +3 -2
@@ -23,7 +25,8 @@ var str = `# branch.oid 66d11860af6d28eb38349ef83de475597cb0e8b4
 ? d.txt
 `
 
-parse(str)
+// Returns a Promise
+status.parse(str).then(output => console.log(output))
 
 // returns
   {
