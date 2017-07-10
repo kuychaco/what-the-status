@@ -157,29 +157,30 @@ function parseLine(line, result, context) {
   switch (first) {
     case '#':
       parseHeader(rest, result)
-      break
+      return false
     case '1':
       parseChangedEntry(rest, result)
-      break
+      return true
     case '2':
       var entry = parseRenamedOrCopiedEntry(rest, result)
       context.inProgressRenameOrCopy = {
         entry: entry
       }
-      break
+      return true
     case 'u':
       parseUnmergedEntry(rest, result)
-      break
+      return true
     case '?':
       parseUntrackedEntry(rest, result)
-      break
+      return true
     case '!':
       parseIgnoredEntry(rest, result)
-      break
+      return true
     default:
       if (context.inProgressRenameOrCopy) {
         context.inProgressRenameOrCopy.entry.origFilePath = line
         context.inProgressRenameOrCopy = null
+        return false
       } else {
         throw new Error('Bad entry: ' + line)
       }
@@ -210,9 +211,10 @@ function parse(str, limit) {
     var resolved = false
     s.pipe(split('\000'))
       .on('data', function (line) {
-        if (limit && ++count > limit) return
+        if (resolved || (limit && count > limit)) return
         try {
-          parseLine(line, result, context)
+          var addedNewEntry = parseLine(line, result, context)
+          if (addedNewEntry) count++
         } catch (err) {
           resolved || reject(err)
           resolved = true
