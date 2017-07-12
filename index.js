@@ -1,25 +1,96 @@
 var Readable = require('stream').Readable
 var split = require('split')
 
+var BRANCH_HEADER_REGEX  = /^branch\.(oid|head|upstream|ab) (.*)$/
 var AHEAD_BEHIND_REGEX   = /^\+(\d+) -(\d+)$/
 var CHANGED_REGEX        = /^([.MADRCU]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
 var RENAMED_COPIED_REGEX = /^([.MADRCU]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([RC]\d+) (.*)$/
 var UNMERGED_REGEX       = /^([.MADRCU]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
 
-function parseAheadBehind(ab) {
-  var match = ab.match(AHEAD_BEHIND_REGEX)
-  if (match) {
-    return {
-      ahead: parseInt(match[1], 10),
-      behind: parseInt(match[2], 10)
+function parse(str, limit) {
+  return new Promise(function (resolve, reject) {
+    var count = 0
+    var result = {
+      branch: {
+        aheadBehind: { ahead: null, behind: null }
+      },
+      changedEntries: [],
+      untrackedEntries: [],
+      renamedEntries: [],
+      unmergedEntries: [],
+      ignoredEntries: [],
     }
-  } else {
-    throw new Error('Invalid ahead/behind string: ' + ab)
+    var context = {
+      inProgressRenameOrCopy: null,
+    }
+
+    var s = new Readable
+    s.push(str)
+    s.push(null)
+
+    var resolved = false
+    s.pipe(split('\000'))
+      .on('data', function (line) {
+        if (resolved || (limit && count > limit)) return
+        try {
+          var addedNewEntry = parseLine(line, result, context)
+          if (addedNewEntry) count++
+        } catch (err) {
+          resolved || reject(err)
+          resolved = true
+        }
+      })
+      .on('error', function (err) {
+        resolved || reject(err)
+        resolved = true
+      })
+      .on('end', function() {
+        resolved || resolve(result)
+        resolved = true
+      })
+  })
+}
+
+function parseLine(line, result, context) {
+  if (!line.length) return
+  var first = line[0];
+  var rest = line.substr(2)
+
+  switch (first) {
+    case '#':
+      parseHeader(rest, result)
+      return false
+    case '1':
+      parseChangedEntry(rest, result)
+      return true
+    case '2':
+      var entry = parseRenamedOrCopiedEntry(rest, result)
+      context.inProgressRenameOrCopy = {
+        entry: entry
+      }
+      return false
+    case 'u':
+      parseUnmergedEntry(rest, result)
+      return true
+    case '?':
+      parseUntrackedEntry(rest, result)
+      return true
+    case '!':
+      parseIgnoredEntry(rest, result)
+      return true
+    default:
+      if (context.inProgressRenameOrCopy) {
+        context.inProgressRenameOrCopy.entry.origFilePath = line
+        context.inProgressRenameOrCopy = null
+        return true
+      } else {
+        throw new Error('Bad entry: ' + line)
+      }
   }
 }
 
 function parseHeader(line, result) {
-  var match = line.match(/^branch\.(oid|head|upstream|ab) (.*)$/)
+  var match = line.match(BRANCH_HEADER_REGEX)
   if (match) {
     var field = match[1]
     var data = match[2]
@@ -30,6 +101,18 @@ function parseHeader(line, result) {
     result.branch[field] = data
   } else {
     // unknown header; ignore
+  }
+}
+
+function parseAheadBehind(ab) {
+  var match = ab.match(AHEAD_BEHIND_REGEX)
+  if (match) {
+    return {
+      ahead: parseInt(match[1], 10),
+      behind: parseInt(match[2], 10)
+    }
+  } else {
+    throw new Error('Invalid ahead/behind string: ' + ab)
   }
 }
 
@@ -69,7 +152,7 @@ function parseRenamedOrCopiedEntry(line, result) {
 
   var entry = {
     filePath: match[9],
-    origFilePath: '~~~UNKNOWN~~~',
+    origFilePath: null,
     stagedStatus: match[1][0] === '.' ? null : match[1][0],
     unstagedStatus: match[1][1] === '.' ? null : match[1][1],
     submodule: {
@@ -147,88 +230,6 @@ function parseIgnoredEntry(line, result) {
   }
   result.ignoredEntries.push(entry)
   return entry
-}
-
-function parseLine(line, result, context) {
-  if (!line.length) return
-  var first = line[0];
-  var rest = line.substr(2)
-
-  switch (first) {
-    case '#':
-      parseHeader(rest, result)
-      return false
-    case '1':
-      parseChangedEntry(rest, result)
-      return true
-    case '2':
-      var entry = parseRenamedOrCopiedEntry(rest, result)
-      context.inProgressRenameOrCopy = {
-        entry: entry
-      }
-      return true
-    case 'u':
-      parseUnmergedEntry(rest, result)
-      return true
-    case '?':
-      parseUntrackedEntry(rest, result)
-      return true
-    case '!':
-      parseIgnoredEntry(rest, result)
-      return true
-    default:
-      if (context.inProgressRenameOrCopy) {
-        context.inProgressRenameOrCopy.entry.origFilePath = line
-        context.inProgressRenameOrCopy = null
-        return false
-      } else {
-        throw new Error('Bad entry: ' + line)
-      }
-  }
-}
-
-function parse(str, limit) {
-  return new Promise(function (resolve, reject) {
-    var count = 0
-    var result = {
-      branch: {
-        aheadBehind: { ahead: null, behind: null }
-      },
-      changedEntries: [],
-      untrackedEntries: [],
-      renamedEntries: [],
-      unmergedEntries: [],
-      ignoredEntries: [],
-    }
-    var context = {
-      inProgressRenameOrCopy: null,
-    }
-
-    var s = new Readable
-    s.push(str)
-    s.push(null)
-
-    var resolved = false
-    s.pipe(split('\000'))
-      .on('data', function (line) {
-        if (resolved || (limit && count > limit)) return
-        try {
-          var addedNewEntry = parseLine(line, result, context)
-          if (addedNewEntry) count++
-        } catch (err) {
-          resolved || reject(err)
-          resolved = true
-        }
-      })
-      .on('error', function (err) {
-        resolved || reject(err)
-        resolved = true
-      })
-      .on('end', function() {
-        resolved || resolve(result)
-        resolved = true
-      })
-  })
 }
 
 module.exports = {

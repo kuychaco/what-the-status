@@ -15,8 +15,13 @@ function nlToNul (str) {
 }
 
 function asyncTest(fn) {
-  return function(test) {
-    Promise.resolve(fn(test)).then(() => test.done(), (err) => test.done(err))
+  return async function(test) {
+    try {
+      await fn(test)
+      test.done()
+    } catch (err) {
+      test.done(err)
+    }
   }
 }
 
