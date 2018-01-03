@@ -3,9 +3,9 @@ var split = require('split')
 
 var BRANCH_HEADER_REGEX  = /^branch\.(oid|head|upstream|ab) (.*)$/
 var AHEAD_BEHIND_REGEX   = /^\+(\d+) -(\d+)$/
-var CHANGED_REGEX        = /^([.MADRCU]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
-var RENAMED_COPIED_REGEX = /^([.MADRCU]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([RC]\d+) (.*)$/
-var UNMERGED_REGEX       = /^([.MADRCU]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
+var CHANGED_REGEX        = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
+var RENAMED_COPIED_REGEX = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([RC]\d+) (.*)$/
+var UNMERGED_REGEX       = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
 
 function parse(str, limit) {
   return new Promise(function (resolve, reject) {
