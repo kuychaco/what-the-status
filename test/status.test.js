@@ -326,3 +326,51 @@ exports.testRenameOrCopyStatus = asyncTest(async function(test) {
     ignoredEntries: []
   })
 })
+
+exports.testTypechangeStatus = asyncTest(async function(test) {
+  var str = nlToNul(dedent`
+    # branch.oid c7ec6f89cccd6beca8d84023e9952137da316d16
+    # branch.head testing
+    # branch.upstream origin/testing
+    # branch.ab +4 -3
+    1 .T N... 100644 100644 120000 e2129701f1a4d54dc44f03c93bca0a2aec7c5449 e2129701f1a4d54dc44f03c93bca0a2aec7c5449 file1.txt
+    1 T. N... 120000 120000 100644 8f8ef5274a82542c092c7738b3ce6851825392f6 8f8ef5274a82542c092c7738b3ce6851825392f6 file2.txt
+  `)
+  const output = await status.parse(str)
+  assert.deepEqual(output, {
+    branch: {
+      oid: 'c7ec6f89cccd6beca8d84023e9952137da316d16',
+      head: 'testing',
+      upstream: 'origin/testing',
+      aheadBehind: { ahead: 4, behind: 3 }
+    },
+    changedEntries: [
+      {
+        filePath: 'file1.txt',
+        stagedStatus: null,
+        unstagedStatus: 'T',
+        submodule: {
+          isSubmodule: false
+        },
+        fileModes: { head: '100644', index: '100644', worktree: '120000' },
+        headSha: 'e2129701f1a4d54dc44f03c93bca0a2aec7c5449',
+        indexSha: 'e2129701f1a4d54dc44f03c93bca0a2aec7c5449'
+      },
+      {
+        filePath: 'file2.txt',
+        stagedStatus: 'T',
+        unstagedStatus: null,
+        submodule: {
+          isSubmodule: false
+        },
+        fileModes: { head: '120000', index: '120000', worktree: '100644' },
+        headSha: '8f8ef5274a82542c092c7738b3ce6851825392f6',
+        indexSha: '8f8ef5274a82542c092c7738b3ce6851825392f6'
+      }
+    ],
+    untrackedEntries: [],
+    renamedEntries: [],
+    unmergedEntries: [],
+    ignoredEntries: []
+  })
+})
