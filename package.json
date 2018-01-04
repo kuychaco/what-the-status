@@ -1,6 +1,6 @@
 {
   "name": "what-the-status",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "procelain v2 status parsing library",
   "main": "index.js",
   "scripts": {
