@@ -6,6 +6,7 @@ var AHEAD_BEHIND_REGEX   = /^\+(\d+) -(\d+)$/
 var CHANGED_REGEX        = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
 var RENAMED_COPIED_REGEX = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([RC]\d+) (.*)$/
 var UNMERGED_REGEX       = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
+var SANITY_REGEX         = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (.*)$/
 
 function parse(str, limit) {
   return new Promise(function (resolve, reject) {
@@ -55,6 +56,9 @@ function parseLine(line, result, context) {
   if (!line.length) return
   var first = line[0];
   var rest = line.substr(2)
+
+  var sanitycheck = rest.match(SANITY_REGEX)
+  if (!sanitycheck) return
 
   switch (first) {
     case '#':
