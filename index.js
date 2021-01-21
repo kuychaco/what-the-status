@@ -58,7 +58,7 @@ function parseLine(line, result, context) {
   var rest = line.substr(2)
 
   var sanitycheck = rest.match(SANITY_REGEX)
-  if (!sanitycheck) return
+  if (!sanitycheck && first != '#') return //primitive, but might work
 
   switch (first) {
     case '#':
