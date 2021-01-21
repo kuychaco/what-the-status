@@ -56,6 +56,9 @@ function parseLine(line, result, context) {
   var first = line[0];
   var rest = line.substr(2)
 
+  // let's just ignore the "switch router" here if we expect next line to contain parsable rename or copy
+  if(context.inProgressRenameOrCopy){first='';}
+
   switch (first) {
     case '#':
       parseHeader(rest, result)
