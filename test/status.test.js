@@ -523,7 +523,6 @@ exports.testRenameOrCopyStatusWhenFilenameIsLowerU = asyncTest(async function(te
   })
 })
 
-// This test might not be necessary (not sure if there may be questionmarks in paths on linux, windows seems not to like these)
 exports.testRenameOrCopyStatusWhenFilenameIsQuestionMarks = asyncTest(async function(test) {
   var str = nlToNul(dedent`
     # branch.oid 9b48b861ea745c83e4b3895298f6b5a0c869e43a
