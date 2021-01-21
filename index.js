@@ -6,7 +6,6 @@ var AHEAD_BEHIND_REGEX   = /^\+(\d+) -(\d+)$/
 var CHANGED_REGEX        = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
 var RENAMED_COPIED_REGEX = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([RC]\d+) (.*)$/
 var UNMERGED_REGEX       = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (\d+) (\d+) (\d+) (\d+) ([0-9a-f]{40}) ([0-9a-f]{40}) ([0-9a-f]{40}) (.*)$/
-var SANITY_REGEX         = /^([.MADRCUT]{2}) ([NS][.C][.M][.U]) (.*)$/
 
 function parse(str, limit) {
   return new Promise(function (resolve, reject) {
@@ -57,14 +56,8 @@ function parseLine(line, result, context) {
   var first = line[0];
   var rest = line.substr(2)
 
-  if (first == '2')
-  {
-    var sanitycheck = rest.match(SANITY_REGEX)
-    if (!sanitycheck)
-    {
-        first = '-'; // enforce switch to use default path instead of 2
-    }
-  }
+  // let's just ignore the "switch router" here if we expect next line to contain parsable rename or copy
+  if(context.inProgressRenameOrCopy){first='';}
 
   switch (first) {
     case '#':
