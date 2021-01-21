@@ -376,6 +376,251 @@ exports.testRenameOrCopyStatusWhenFilenameIsTwos = asyncTest(async function(test
   })
 })
 
+exports.testRenameOrCopyStatusWhenFilenameIsHash = asyncTest(async function(test) {
+  var str = nlToNul(dedent`
+    # branch.oid 9b48b861ea745c83e4b3895298f6b5a0c869e43a
+    # branch.head master
+    # branch.upstream origin/master
+    # branch.ab +4 -15
+    2 C. N... 000000 100644 100644 0000000000000000000000000000000000000000 954cae3b40d4e4c24733b6b593783c3280d73933 C100 a.txt\0`+dedent`#.txt
+    2 R. N... 100644 100644 100644 9591561840608d8af4384d52d4b915d0a52f357b 9591561840608d8af4384d52d4b915d0a52f357b R100 b.txt\0`+dedent`##.txt
+  `)
+
+  const output = await status.parse(str)
+  assert.deepEqual(output, {
+    branch: {
+      oid: '9b48b861ea745c83e4b3895298f6b5a0c869e43a',
+      head: 'master',
+      upstream: 'origin/master',
+      aheadBehind: { ahead: 4, behind: 15 }
+    },
+    changedEntries: [],
+    untrackedEntries: [],
+    renamedEntries: [
+      {
+        filePath: 'a.txt',
+        origFilePath: '#.txt',
+        stagedStatus: 'C',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '000000', index: '100644', worktree: '100644' },
+        headSha: '0000000000000000000000000000000000000000',
+        indexSha: '954cae3b40d4e4c24733b6b593783c3280d73933',
+        similarity: { type: 'C', score: 100 }
+      },
+      {
+        filePath: 'b.txt',
+        origFilePath: '##.txt',
+        stagedStatus: 'R',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '100644', index: '100644', worktree: '100644' },
+        headSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        indexSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        similarity: { type: 'R', score: 100 }
+      }
+    ],
+    unmergedEntries: [],
+    ignoredEntries: []
+  })
+})
+
+exports.testRenameOrCopyStatusWhenFilenameIsOnes = asyncTest(async function(test) {
+  var str = nlToNul(dedent`
+    # branch.oid 9b48b861ea745c83e4b3895298f6b5a0c869e43a
+    # branch.head master
+    # branch.upstream origin/master
+    # branch.ab +4 -15
+    2 C. N... 000000 100644 100644 0000000000000000000000000000000000000000 954cae3b40d4e4c24733b6b593783c3280d73933 C100 a.txt\0`+dedent`11.txt
+    2 R. N... 100644 100644 100644 9591561840608d8af4384d52d4b915d0a52f357b 9591561840608d8af4384d52d4b915d0a52f357b R100 b.txt\0`+dedent`111.txt
+  `)
+
+  const output = await status.parse(str)
+  assert.deepEqual(output, {
+    branch: {
+      oid: '9b48b861ea745c83e4b3895298f6b5a0c869e43a',
+      head: 'master',
+      upstream: 'origin/master',
+      aheadBehind: { ahead: 4, behind: 15 }
+    },
+    changedEntries: [],
+    untrackedEntries: [],
+    renamedEntries: [
+      {
+        filePath: 'a.txt',
+        origFilePath: '11.txt',
+        stagedStatus: 'C',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '000000', index: '100644', worktree: '100644' },
+        headSha: '0000000000000000000000000000000000000000',
+        indexSha: '954cae3b40d4e4c24733b6b593783c3280d73933',
+        similarity: { type: 'C', score: 100 }
+      },
+      {
+        filePath: 'b.txt',
+        origFilePath: '111.txt',
+        stagedStatus: 'R',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '100644', index: '100644', worktree: '100644' },
+        headSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        indexSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        similarity: { type: 'R', score: 100 }
+      }
+    ],
+    unmergedEntries: [],
+    ignoredEntries: []
+  })
+})
+
+exports.testRenameOrCopyStatusWhenFilenameIsLowerU = asyncTest(async function(test) {
+  var str = nlToNul(dedent`
+    # branch.oid 9b48b861ea745c83e4b3895298f6b5a0c869e43a
+    # branch.head master
+    # branch.upstream origin/master
+    # branch.ab +4 -15
+    2 C. N... 000000 100644 100644 0000000000000000000000000000000000000000 954cae3b40d4e4c24733b6b593783c3280d73933 C100 a.txt\0`+dedent`uu.txt
+    2 R. N... 100644 100644 100644 9591561840608d8af4384d52d4b915d0a52f357b 9591561840608d8af4384d52d4b915d0a52f357b R100 b.txt\0`+dedent`uuu.txt
+  `)
+
+  const output = await status.parse(str)
+  assert.deepEqual(output, {
+    branch: {
+      oid: '9b48b861ea745c83e4b3895298f6b5a0c869e43a',
+      head: 'master',
+      upstream: 'origin/master',
+      aheadBehind: { ahead: 4, behind: 15 }
+    },
+    changedEntries: [],
+    untrackedEntries: [],
+    renamedEntries: [
+      {
+        filePath: 'a.txt',
+        origFilePath: 'uu.txt',
+        stagedStatus: 'C',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '000000', index: '100644', worktree: '100644' },
+        headSha: '0000000000000000000000000000000000000000',
+        indexSha: '954cae3b40d4e4c24733b6b593783c3280d73933',
+        similarity: { type: 'C', score: 100 }
+      },
+      {
+        filePath: 'b.txt',
+        origFilePath: 'uuu.txt',
+        stagedStatus: 'R',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '100644', index: '100644', worktree: '100644' },
+        headSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        indexSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        similarity: { type: 'R', score: 100 }
+      }
+    ],
+    unmergedEntries: [],
+    ignoredEntries: []
+  })
+})
+
+// This test might not be necessary (not sure if there may be questionmarks in paths on linux, windows seems not to like these)
+exports.testRenameOrCopyStatusWhenFilenameIsQuestionMarks = asyncTest(async function(test) {
+  var str = nlToNul(dedent`
+    # branch.oid 9b48b861ea745c83e4b3895298f6b5a0c869e43a
+    # branch.head master
+    # branch.upstream origin/master
+    # branch.ab +4 -15
+    2 C. N... 000000 100644 100644 0000000000000000000000000000000000000000 954cae3b40d4e4c24733b6b593783c3280d73933 C100 a.txt\0`+dedent`??.txt
+    2 R. N... 100644 100644 100644 9591561840608d8af4384d52d4b915d0a52f357b 9591561840608d8af4384d52d4b915d0a52f357b R100 b.txt\0`+dedent`???.txt
+  `)
+
+  const output = await status.parse(str)
+  assert.deepEqual(output, {
+    branch: {
+      oid: '9b48b861ea745c83e4b3895298f6b5a0c869e43a',
+      head: 'master',
+      upstream: 'origin/master',
+      aheadBehind: { ahead: 4, behind: 15 }
+    },
+    changedEntries: [],
+    untrackedEntries: [],
+    renamedEntries: [
+      {
+        filePath: 'a.txt',
+        origFilePath: '??.txt',
+        stagedStatus: 'C',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '000000', index: '100644', worktree: '100644' },
+        headSha: '0000000000000000000000000000000000000000',
+        indexSha: '954cae3b40d4e4c24733b6b593783c3280d73933',
+        similarity: { type: 'C', score: 100 }
+      },
+      {
+        filePath: 'b.txt',
+        origFilePath: '???.txt',
+        stagedStatus: 'R',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '100644', index: '100644', worktree: '100644' },
+        headSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        indexSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        similarity: { type: 'R', score: 100 }
+      }
+    ],
+    unmergedEntries: [],
+    ignoredEntries: []
+  })
+})
+
+exports.testRenameOrCopyStatusWhenFilenameIsExclamations = asyncTest(async function(test) {
+  var str = nlToNul(dedent`
+    # branch.oid 9b48b861ea745c83e4b3895298f6b5a0c869e43a
+    # branch.head master
+    # branch.upstream origin/master
+    # branch.ab +4 -15
+    2 C. N... 000000 100644 100644 0000000000000000000000000000000000000000 954cae3b40d4e4c24733b6b593783c3280d73933 C100 a.txt\0`+dedent`!!.txt
+    2 R. N... 100644 100644 100644 9591561840608d8af4384d52d4b915d0a52f357b 9591561840608d8af4384d52d4b915d0a52f357b R100 b.txt\0`+dedent`!!!.txt
+  `)
+
+  const output = await status.parse(str)
+  assert.deepEqual(output, {
+    branch: {
+      oid: '9b48b861ea745c83e4b3895298f6b5a0c869e43a',
+      head: 'master',
+      upstream: 'origin/master',
+      aheadBehind: { ahead: 4, behind: 15 }
+    },
+    changedEntries: [],
+    untrackedEntries: [],
+    renamedEntries: [
+      {
+        filePath: 'a.txt',
+        origFilePath: '??.txt',
+        stagedStatus: 'C',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '000000', index: '100644', worktree: '100644' },
+        headSha: '0000000000000000000000000000000000000000',
+        indexSha: '954cae3b40d4e4c24733b6b593783c3280d73933',
+        similarity: { type: 'C', score: 100 }
+      },
+      {
+        filePath: 'b.txt',
+        origFilePath: '???.txt',
+        stagedStatus: 'R',
+        unstagedStatus: null,
+        submodule: { isSubmodule: false },
+        fileModes: { head: '100644', index: '100644', worktree: '100644' },
+        headSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        indexSha: '9591561840608d8af4384d52d4b915d0a52f357b',
+        similarity: { type: 'R', score: 100 }
+      }
+    ],
+    unmergedEntries: [],
+    ignoredEntries: []
+  })
+})
 
 exports.testTypechangeStatus = asyncTest(async function(test) {
   var str = nlToNul(dedent`
