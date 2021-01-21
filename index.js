@@ -57,8 +57,14 @@ function parseLine(line, result, context) {
   var first = line[0];
   var rest = line.substr(2)
 
-  var sanitycheck = rest.match(SANITY_REGEX)
-  if (!sanitycheck && first != '#') return //primitive, but might work
+  if (first == '2')
+  {
+    var sanitycheck = rest.match(SANITY_REGEX)
+    if (!sanitycheck)
+    {
+        first = '-'; // enforce switch to use default path instead of 2
+    }
+  }
 
   switch (first) {
     case '#':
